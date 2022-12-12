@@ -1,52 +1,57 @@
-import '../data/api/api_service.dart';
-import '../data/model/article.dart';
+import 'package:provider/provider.dart';
+
+import '../provider/news_provider.dart';
 import '../widgets/card_article.dart';
 import '../widgets/platform_widget.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
-class ArticleListPage extends StatefulWidget {
+class ArticleListPage extends StatelessWidget {
   const ArticleListPage({Key? key}) : super(key: key);
 
-  @override
-  State<ArticleListPage> createState() => _ArticleListPageState();
-}
-
-class _ArticleListPageState extends State<ArticleListPage> {
-  late Future<ArticlesResult> _article;
-
-  @override
-  void initState() {
-    super.initState();
-    _article = ApiService().topHeadlines();
-  }
-
-  Widget _buildList(BuildContext context) {
-    return FutureBuilder(
-      future: _article,
-      builder: (context, AsyncSnapshot<ArticlesResult> snapshot) {
-        var state = snapshot.connectionState;
-        if (state != ConnectionState.done) {
+  Widget _buildList() {
+    // widget Consumer yang merupakan bagian dari package provider.
+    // Artinya, setiap ada perubahan di dalam kelas NewsProvider berupa state
+    // dari kelas enum ResultState atau bahkan data yang akan dikeluarkan akan
+    // ditampung oleh variabel state.
+    return Consumer<NewsProvider>(
+      builder: (context, state, _) {
+        // Kemudian kita juga menggunakan if statement untuk mengecek state dari
+        // kelas enum yang didapatkan berada di posisi apa. Apakah loading, noData,
+        // hasData, error, atau bahkan tidak masuk state sama sekali.
+        if (state.state == ResultState.loading) {
           return const Center(child: CircularProgressIndicator());
+        } else if (state.state == ResultState.hasData) {
+          // menggunakan widget ListView.builder karena data yang didapatkan
+          // bersifat dinamis. Kemudian di dalam widget tersebut kita melakukan
+          // looping untuk menampilkan masing-masing item data kedalam sebuah
+          // widget yang sudah kita buat sebelumnya yaitu widget CardArticle.
+          return ListView.builder(
+            shrinkWrap: true,
+            itemCount: state.result.articles.length,
+            itemBuilder: (context, index) {
+              var article = state.result.articles[index];
+              return CardArticle(article: article);
+            },
+          );
+        } else if (state.state == ResultState.noData) {
+          return Center(
+            child: Material(
+              child: Text(state.message),
+            ),
+          );
+        } else if (state.state == ResultState.error) {
+          return Center(
+            child: Material(
+              child: Text(state.message),
+            ),
+          );
         } else {
-          if (snapshot.hasData) {
-            return ListView.builder(
-              shrinkWrap: true,
-              itemCount: snapshot.data?.articles.length,
-              itemBuilder: (context, index) {
-                var article = snapshot.data?.articles[index];
-                return CardArticle(article: article!);
-              },
-            );
-          } else if (snapshot.hasError) {
-            return Center(
-              child: Material(
-                child: Text(snapshot.error.toString()),
-              ),
-            );
-          } else {
-            return const Material(child: Text(''));
-          }
+          return const Center(
+            child: Material(
+              child: Text(''),
+            ),
+          );
         }
       },
     );
@@ -57,7 +62,7 @@ class _ArticleListPageState extends State<ArticleListPage> {
       appBar: AppBar(
         title: const Text('News App'),
       ),
-      body: _buildList(context),
+      body: _buildList(),
     );
   }
 
@@ -67,7 +72,7 @@ class _ArticleListPageState extends State<ArticleListPage> {
         middle: Text('News App'),
         transitionBetweenRoutes: false,
       ),
-      child: _buildList(context),
+      child: _buildList(),
     );
   }
 

@@ -1,11 +1,14 @@
 import 'dart:io';
 
 import '../common/styles.dart';
+import '../data/api/api_service.dart';
+import '../provider/news_provider.dart';
 import '../ui/article_list_page.dart';
 import '../ui/settings_page.dart';
 import '../widgets/platform_widget.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class HomePage extends StatefulWidget {
   static const routeName = '/home_page';
@@ -20,9 +23,22 @@ class _HomePageState extends State<HomePage> {
   int _bottomNavIndex = 0;
   static const String _headlineText = 'Headline';
 
-  final List<Widget> _listWidget = const [
-    ArticleListPage(),
-    SettingsPage(),
+  // Jika kita bandingkan pada codelab News API, terdapat perbedaan pada kelas
+  // HomePage. Di sini sebelum kita mengakses kelas ArticleListPage, kita harus
+  // membungkusnya terlebih dahulu menggunakan kelas ChangeNotifierProvider yang
+  // disediakan oleh package provider.
+  // Kenapa demikian? Guna mengambil data dari API kita menggunakan state
+  // management Provider. Kemudian kita bisa mengakses kelas HomePage
+  // dengan memanggilnya pada parameter child. Perlu Anda ingat bahwa Anda
+  // perlu menambahkan parameter create yang bertipekan Function. P
+  // ada properti create Anda memanggil kelas NewsProvider dengan nilai
+  // dari parameternya adalah kelas ApiService().
+  final List<Widget> _listWidget = [
+    ChangeNotifierProvider<NewsProvider>(
+      create: (_) => NewsProvider(apiService: ApiService()),
+      child: const ArticleListPage(),
+    ),
+    const SettingsPage(),
   ];
 
   final List<BottomNavigationBarItem> _bottomNavBarItems = [
